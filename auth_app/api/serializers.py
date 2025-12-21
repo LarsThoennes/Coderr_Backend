@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from profile_app.models import Profile
 
 User = get_user_model()
 
@@ -35,6 +36,12 @@ class RegistrationSerializer(serializers.ModelSerializer):
             email=validated_data['email'],
             password=validated_data['password'],
             type=validated_data['type'],
+        )
+
+        Profile.objects.create(
+            user=user,
+            type=validated_data['type'],
+            email=validated_data['email'],
         )
 
         return user
