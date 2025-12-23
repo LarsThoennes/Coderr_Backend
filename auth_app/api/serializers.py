@@ -38,10 +38,6 @@ class RegistrationSerializer(serializers.ModelSerializer):
             type=validated_data['type'],
         )
 
-        Profile.objects.create(
-            user=user,
-            type=validated_data['type'],
-            email=validated_data['email'],
-        )
+        Profile.objects.create(user=user)
 
         return user
