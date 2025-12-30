@@ -9,7 +9,6 @@ from django.db.models import Min
 from rest_framework import filters, status
 from django.shortcuts import get_object_or_404
 
-
 class OffersView(ListCreateAPIView):
     serializer_class = OffersListSerializer
     permission_classes = [IsAuthenticated]
@@ -61,7 +60,6 @@ class OfferDetailView(APIView):
     
     def patch(self, request, pk):
         offer = get_object_or_404(Offer, pk=pk)
-        print('offer', offer)
 
         if offer.owner != request.user:
             return Response(
