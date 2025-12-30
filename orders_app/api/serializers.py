@@ -2,7 +2,6 @@ from rest_framework import serializers
 from orders_app.models import Order, OrderFeature
 from offers_app.models import OfferDetail
 
-
 class OrderSerializer(serializers.ModelSerializer):
     offer_detail_id = serializers.IntegerField(write_only=True)
     price = serializers.IntegerField(read_only=True)
@@ -15,9 +14,6 @@ class OrderSerializer(serializers.ModelSerializer):
         read_only=True
     )
     features = serializers.SerializerMethodField()
-
-
-
     class Meta:
         model = Order
         fields = [
@@ -67,7 +63,6 @@ class OrderSerializer(serializers.ModelSerializer):
         request = self.context['request']
         offer_detail = validated_data.pop('offer_detail_id')
 
-        # 🧾 Order erstellen (Snapshot)
         order = Order.objects.create(
             customer_user=request.user,
             business_user=offer_detail.offer.owner,
@@ -79,7 +74,6 @@ class OrderSerializer(serializers.ModelSerializer):
             status='in_progress',
         )
 
-        # 🧩 Features kopieren
         OrderFeature.objects.bulk_create([
             OrderFeature(
                 features=order,
