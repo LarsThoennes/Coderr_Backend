@@ -3,6 +3,17 @@ from django.db import models
 
 
 class Offer(models.Model):
+    """
+    Represents a single offer created by a business user.
+    
+    Fields:
+    - owner: The user who created the offer.
+    - title: The title of the offer.
+    - description: A detailed description of the offer.
+    - image: Optional image representing the offer.
+    - created_at: Timestamp when the offer was created.
+    - updated_at: Timestamp when the offer was last updated.
+    """
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -20,6 +31,17 @@ class Offer(models.Model):
 
 
 class OfferDetail(models.Model):
+    """
+    Represents detailed information for an Offer, e.g., different pricing tiers.
+
+    Fields:
+    - offer: The parent Offer this detail belongs to.
+    - title: Title of this detail variant.
+    - offer_type: Type of the offer variant (basic, standard, premium).
+    - revisions: Number of revisions included.
+    - delivery_time_in_days: Delivery time for this offer detail.
+    - price: Price for this offer detail.
+    """
     OFFER_TYPES = (
         ("basic", "Basic"),
         ("standard", "Standard"),
@@ -45,6 +67,13 @@ class OfferDetail(models.Model):
         return f"{self.offer.title} - {self.offer_type}"
 
 class OfferFeature(models.Model):
+    """
+    Represents individual features included in an OfferDetail.
+    
+    Fields:
+    - detail: The OfferDetail this feature belongs to.
+    - name: Name/description of the feature.
+    """
     detail = models.ForeignKey(
         OfferDetail,
         on_delete=models.CASCADE,

@@ -4,6 +4,12 @@ from profile_app.models import Profile
 
 
 class OfferDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializer for OfferDetail model.
+    - Features are represented as a list of strings.
+    - Price is an integer.
+    Used when creating or displaying individual offer details.
+    """
     features = serializers.ListField(
         child=serializers.CharField(),
         write_only=True
@@ -24,6 +30,9 @@ class OfferDetailSerializer(serializers.ModelSerializer):
         ]
 
     def to_representation(self, instance):
+        """
+        Convert features to a list of names for read operations.
+        """
         data = super().to_representation(instance)
         data['features'] = list(
             instance.features.values_list('name', flat=True)
@@ -32,6 +41,11 @@ class OfferDetailSerializer(serializers.ModelSerializer):
 
 
 class OffersSerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating and displaying Offer instances including nested OfferDetails.
+    - Nested serializer for details (OfferDetailSerializer)
+    - Supports bulk creation of features.
+    """
     details = OfferDetailSerializer(many=True)
 
     class Meta:
@@ -45,6 +59,9 @@ class OffersSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
+        """
+        Create an Offer with nested OfferDetails and Features.
+        """
         details_data = validated_data.pop('details')
         request = self.context['request']
 
@@ -69,6 +86,10 @@ class OffersSerializer(serializers.ModelSerializer):
         return offer
     
 class OfferListDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializer for minimal OfferDetail information.
+    Returns only ID and URL.
+    """
     url = serializers.SerializerMethodField()
     class Meta:
         model = OfferDetail
@@ -81,6 +102,10 @@ class OfferListDetailSerializer(serializers.ModelSerializer):
         return f"/offerdetails/{obj.id}/"
 
 class ProfileMiniSerializer(serializers.ModelSerializer):
+    """
+    Minimal serializer for Profile information.
+    Includes first_name, last_name, and username only.
+    """
     username = serializers.CharField(source='user.username', read_only=True)
 
     class Meta:
@@ -88,6 +113,10 @@ class ProfileMiniSerializer(serializers.ModelSerializer):
         fields = ['first_name', 'last_name', 'username']
 
 class FilterListDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializer for filtering operations.
+    Currently returns only the price.
+    """
     price = serializers.IntegerField()
     class Meta:
         model = OfferDetail
@@ -96,6 +125,11 @@ class FilterListDetailSerializer(serializers.ModelSerializer):
         ]
 
 class OffersListSerializer(serializers.ModelSerializer):
+    """
+    Serializer for listing Offers.
+    - Includes minimal price and delivery time.
+    - Includes minimal profile information of the owner.
+    """
     details = OfferListDetailSerializer(many=True)
     min_price = serializers.SerializerMethodField()
     min_delivery_time = serializers.SerializerMethodField()
@@ -139,6 +173,10 @@ class OffersListSerializer(serializers.ModelSerializer):
         ]
 
 class OfferPrimaryKeySerializer(serializers.ModelSerializer):
+    """
+    Serializer for a single Offer with minimal information.
+    - Includes min_price and min_delivery_time.
+    """
     details = OfferListDetailSerializer(many=True)
     min_price = serializers.SerializerMethodField()
     min_delivery_time = serializers.SerializerMethodField()
@@ -176,6 +214,9 @@ class OfferPrimaryKeySerializer(serializers.ModelSerializer):
 
 
 class AllDetailsForOfferSerializer(serializers.ModelSerializer):
+    """
+    Serializer for all details of a specific OfferDetail including features.
+    """
     features = serializers.ListField(
         child=serializers.CharField(),
         write_only=True
@@ -203,11 +244,18 @@ class AllDetailsForOfferSerializer(serializers.ModelSerializer):
         return data
     
 class OfferDetailWriteSerializer(serializers.ModelSerializer):
+    """
+    Serializer for writing/updating OfferDetails.
+    - ID is optional for updating existing details
+    - Features are passed as a list of strings.
+    """
     id = serializers.IntegerField(required=False)
     features = serializers.ListField(
         child=serializers.CharField(),
         write_only=True
     )
+
+    price = serializers.IntegerField()
 
     class Meta:
         model = OfferDetail
@@ -230,6 +278,11 @@ class OfferDetailWriteSerializer(serializers.ModelSerializer):
 
 
 class OfferDetailsWithPrimaryKeySerializer(serializers.ModelSerializer):
+    """
+    Serializer for updating an Offer with nested OfferDetails.
+    - Supports both updating existing details and adding new ones.
+    - Features are replaced if new ones are provided.
+    """
     details = OfferDetailWriteSerializer(many=True, required=False)
 
     class Meta:

@@ -6,6 +6,15 @@ User = get_user_model()
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
+    """
+    Serializer for user registration.
+
+    This serializer handles:
+    - validation of unique email addresses
+    - password confirmation
+    - creation of a new user
+    - automatic creation of an associated user profile
+    """
     repeated_password = serializers.CharField(write_only=True)
 
     class Meta:
@@ -16,6 +25,13 @@ class RegistrationSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, data):
+        """
+        Performs cross-field validation.
+
+        Validations:
+        - Ensures the email address is unique
+        - Ensures password and repeated_password match
+        """
         if User.objects.filter(email=data['email']).exists():
             raise serializers.ValidationError({
                 'email': 'Email is already in use.'
@@ -29,6 +45,14 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
+        """
+        Creates a new user and its related profile.
+
+        Steps:
+        - Remove repeated_password from validated data
+        - Create the user using Django's create_user method
+        - Automatically create an empty Profile instance for the user
+        """
         validated_data.pop('repeated_password')
 
         user = User.objects.create_user(

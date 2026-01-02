@@ -3,6 +3,15 @@ from orders_app.models import Order, OrderFeature
 from offers_app.models import OfferDetail
 
 class OrderSerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating and listing orders.
+
+    This serializer:
+    - Accepts an `offer_detail_id` to create an order from an OfferDetail
+    - Automatically sets customer and business users
+    - Copies relevant data from the related OfferDetail
+    - Attaches all selected features to the order
+    """
     offer_detail_id = serializers.IntegerField(write_only=True)
     price = serializers.IntegerField(read_only=True)
     customer_user = serializers.IntegerField(
@@ -43,6 +52,14 @@ class OrderSerializer(serializers.ModelSerializer):
         ]
 
     def validate_offer_detail_id(self, value):
+        """
+        Validate that the provided OfferDetail exists.
+
+        Also optimizes database access by prefetching related data.
+
+        Raises:
+            ValidationError: If the OfferDetail does not exist.
+        """
         try:
             return OfferDetail.objects.select_related(
                 'offer__owner'
@@ -55,11 +72,23 @@ class OrderSerializer(serializers.ModelSerializer):
             )
         
     def get_features(self, obj):
+        """
+        Return a list of feature names associated with the order.
+        """
         return list(
             obj.order_features.values_list('name', flat=True)
         )
 
     def create(self, validated_data):
+        """
+        Create a new Order instance.
+
+        - Assigns the authenticated user as customer
+        - Assigns the offer owner as business user
+        - Copies offer detail values into the order
+        - Automatically sets order status to 'in_progress'
+        - Copies all features from OfferDetail into OrderFeature
+        """
         request = self.context['request']
         offer_detail = validated_data.pop('offer_detail_id')
 
@@ -86,6 +115,11 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class OrderDetailsWithPrimaryKeySerializer(serializers.ModelSerializer):
+    """
+    Serializer for partial updates of an order.
+
+    Currently allows updating only the order status.
+    """
     class Meta:
         model = Order
         fields = [

@@ -10,6 +10,20 @@ from rest_framework import filters, status
 from django.shortcuts import get_object_or_404
 
 class OffersView(ListCreateAPIView):
+    """
+    Handles listing and creation of offers.
+
+    - GET:
+      Returns a paginated list of all offers.
+      Supports:
+        - ordering (updated_at, min_price)
+        - searching (title, description)
+        - filtering by creator, minimum price and maximum delivery time
+
+    - POST:
+      Allows business users to create new offers.
+      Customer users are not permitted to create offers.
+    """
     serializer_class = OffersListSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = LargeResultsSetPagination
@@ -19,6 +33,16 @@ class OffersView(ListCreateAPIView):
     search_fields = ['title', 'description']
 
     def get_queryset(self):
+        """
+        Returns a queryset of offers annotated with:
+        - min_price: lowest price across all offer details
+        - min_delivery_time: shortest delivery time across all offer details
+
+        Optional query parameters:
+        - creator_id: filter offers by owner
+        - min_price: filter offers with minimum price >= value
+        - max_delivery_time: filter offers with delivery time <= value
+        """
         queryset = Offer.objects.all().annotate(
             min_price=Min('details__price'),
             min_delivery_time=Min('details__delivery_time_in_days')
@@ -39,6 +63,11 @@ class OffersView(ListCreateAPIView):
         return queryset
 
     def post(self, request):
+        """
+        Creates a new offer.
+
+        Only users with type 'business' are allowed to create offers.
+        """
         if request.user.type != 'business':
             return Response(
                 {"detail": "Only business users can create offers."},
@@ -51,7 +80,13 @@ class OffersView(ListCreateAPIView):
         return Response(serializer.data, status=201)
     
 class OfferDetailView(APIView):
+    """
+    Handles retrieve, update and deletion of a single offer.
+    """
     def get(self, request, pk):
+        """
+        Returns basic information about a single offer identified by its ID.
+        """
         offer = get_object_or_404(Offer, pk=pk)
 
         serializer = OfferPrimaryKeySerializer(offer)
@@ -59,6 +94,11 @@ class OfferDetailView(APIView):
         return Response(serializer.data)
     
     def patch(self, request, pk):
+        """
+        Partially updates an offer.
+
+        Only the owner of the offer is allowed to update it.
+        """
         offer = get_object_or_404(Offer, pk=pk)
 
         if offer.owner != request.user:
@@ -78,6 +118,11 @@ class OfferDetailView(APIView):
         return Response(serializer.data)
     
     def delete(self, request, pk):
+        """
+        Deletes an offer.
+
+        Only the owner of the offer is allowed to delete it.
+        """
         offer = get_object_or_404(Offer, pk=pk)
         
         if offer.owner != request.user:
@@ -90,9 +135,15 @@ class OfferDetailView(APIView):
 
 
 class AllDetailsForOfferView(APIView):
+    """
+    Returns all details for a specific offer detail entry.
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
+        """
+        Retrieves a single OfferDetail including all related information.
+        """
         offer_detail = get_object_or_404(OfferDetail, pk=pk)
         serializer = AllDetailsForOfferSerializer(offer_detail)
         return Response(serializer.data)

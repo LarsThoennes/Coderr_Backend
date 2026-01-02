@@ -1,7 +1,13 @@
 from django.db import models
-
-# Create your models here.
 class Order(models.Model):
+    """
+    Represents a placed order on the platform.
+
+    An order is created by a customer user based on an OfferDetail
+    and is fulfilled by a business user. It stores a snapshot of
+    the offer data at the time of ordering.
+    """
+
     STATUS_CHOICES = [
         ('in_progress', 'In Progress'),
         ('completed', 'Completed'),
@@ -27,6 +33,12 @@ class Order(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 class OrderFeature(models.Model):
+    """
+    Represents a single feature included in an order.
+
+    Features are copied from the related OfferDetail at the time
+    the order is created to keep historical consistency.
+    """
     features = models.ForeignKey(
         Order,
         on_delete=models.CASCADE,
