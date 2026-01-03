@@ -8,6 +8,8 @@ from rest_framework.generics import ListCreateAPIView
 from django.db.models import Min
 from rest_framework import filters, status
 from django.shortcuts import get_object_or_404
+from rest_framework import serializers
+
 
 class OffersView(ListCreateAPIView):
     """
@@ -58,15 +60,33 @@ class OffersView(ListCreateAPIView):
 
         creator_id = self.request.query_params.get('creator_id')
         if creator_id:
-            queryset = queryset.filter(owner_id=int(creator_id))
+            try:
+                creator_id_int = int(creator_id)
+            except ValueError:
+                raise serializers.ValidationError({
+                    "creator_id": "Must be an integer."
+                })
+            queryset = queryset.filter(owner_id=creator_id_int)
 
         min_price = self.request.query_params.get('min_price')
         if min_price:
-            queryset = queryset.filter(min_price__gte=float(min_price))
+            try:
+                min_price_float = float(min_price)
+            except ValueError:
+                raise serializers.ValidationError({
+                    "min_price": "Must be a numeric value."
+                })
+            queryset = queryset.filter(min_price__gte=min_price_float)
 
         max_delivery_time = self.request.query_params.get('max_delivery_time')
         if max_delivery_time:
-            queryset = queryset.filter(min_delivery_time__lte=int(max_delivery_time))
+            try:
+                max_delivery_time_int = int(max_delivery_time)
+            except ValueError:
+                raise serializers.ValidationError({
+                    "max_delivery_time": "Must be an integer."
+                })
+            queryset = queryset.filter(min_delivery_time__lte=max_delivery_time_int)
 
         return queryset
 
