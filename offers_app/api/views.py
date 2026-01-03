@@ -1,5 +1,5 @@
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from .serializers import OffersSerializer, OffersListSerializer, OfferPrimaryKeySerializer, AllDetailsForOfferSerializer, OfferDetailsWithPrimaryKeySerializer
 from offers_app.models import Offer, OfferDetail
@@ -25,12 +25,20 @@ class OffersView(ListCreateAPIView):
       Customer users are not permitted to create offers.
     """
     serializer_class = OffersListSerializer
-    permission_classes = [IsAuthenticated]
     pagination_class = LargeResultsSetPagination
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
     ordering_fields = ['updated_at', 'min_price']
     ordering = ['-updated_at'] 
     search_fields = ['title', 'description']
+
+    def get_permissions(self):
+        """
+        - AllowAny for GET requests
+        - IsAuthenticated for POST requests
+        """
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         """

@@ -246,10 +246,14 @@ class AllDetailsForOfferSerializer(serializers.ModelSerializer):
 class OfferDetailWriteSerializer(serializers.ModelSerializer):
     """
     Serializer for writing/updating OfferDetails.
-    - ID is optional for updating existing details
-    - Features are passed as a list of strings.
     """
     id = serializers.IntegerField(required=False)
+
+    offer_type = serializers.ChoiceField(
+        choices=OfferDetail.OFFER_TYPES,
+        required=True
+    )
+
     features = serializers.ListField(
         child=serializers.CharField(),
         write_only=True
@@ -277,12 +281,8 @@ class OfferDetailWriteSerializer(serializers.ModelSerializer):
         return data
 
 
+
 class OfferDetailsWithPrimaryKeySerializer(serializers.ModelSerializer):
-    """
-    Serializer for updating an Offer with nested OfferDetails.
-    - Supports both updating existing details and adding new ones.
-    - Features are replaced if new ones are provided.
-    """
     details = OfferDetailWriteSerializer(many=True, required=False)
 
     class Meta:
@@ -294,6 +294,30 @@ class OfferDetailsWithPrimaryKeySerializer(serializers.ModelSerializer):
             'description',
             'details'
         ]
+
+    def validate_details(self, details):
+        """
+        Ensure every detail has all required fields.
+        """
+        required_fields = [
+            'title',
+            'revisions',
+            'delivery_time_in_days',
+            'price',
+            'features',
+            'offer_type'
+        ]
+
+        errors = {}
+        for index, detail in enumerate(details):
+            missing = [f for f in required_fields if f not in detail]
+            if missing:
+                errors[index] = {f: ["This field is required."] for f in missing}
+
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        return details
 
     def update(self, instance, validated_data):
         details_data = validated_data.pop('details', None)
