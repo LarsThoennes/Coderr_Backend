@@ -30,6 +30,6 @@ class BaseInfoView(APIView):
         return Response({
             "review_count": Review.objects.count(),
             "average_rating": round(Review.objects.aggregate(avg=Avg('rating'))['avg'] or 0,1),
-            "offer_count": Offer.objects.count(),
             "business_profile_count": User.objects.filter(type='business').count(),
+            "offer_count": Offer.objects.count(),
         })
