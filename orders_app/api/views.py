@@ -6,6 +6,8 @@ from django.shortcuts import get_object_or_404, get_list_or_404
 from rest_framework.response import Response
 from orders_app.models import Order
 from auth_app.models import User
+from django.db.models import Q
+
 
 class OrdersView(APIView):
     """
@@ -33,7 +35,17 @@ class OrdersView(APIView):
         if request.user.type not in ['customer', 'business']:
             return Response({"detail": "Only customer or business users are allowed."},status=403)
 
-        orders = get_list_or_404(Order, customer_user=request.user)
+        orders = Order.objects.filter(
+            Q(customer_user=request.user) |
+            Q(business_user=request.user)
+        )
+
+        if not orders.exists():
+            return Response(
+                {"detail": "No orders found for this user."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data)
 
@@ -114,7 +126,7 @@ class OrderDetailView(APIView):
                 status=status.HTTP_403_FORBIDDEN)
 
         if request_data.get('status') not in ['in_progress', 'completed', 'cancelled']:
-            return Response({"detail": "The request.data is not valid."}, status=403)
+            return Response({"detail": "The request.data is not valid."}, status=400)
 
         serializer = OrderDetailsWithPrimaryKeySerializer(
             order,
@@ -154,13 +166,20 @@ class OrderCompletedCountView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
-       """
+        """
         Retrieve the count of completed orders for a business user.
 
         Returns:
             200 OK: Number of completed orders.
             404 Not Found: If the business user does not exist.
         """
-       orders = Order.objects.filter(business_user=pk, status='completed')
+        try:
+            business_user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "Business user does not exist."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        orders = Order.objects.filter(business_user=pk, status='completed')
 
-       return Response({'completed_order_count': len(orders)})
+        return Response({'completed_order_count': len(orders)})

@@ -120,8 +120,30 @@ class OrderDetailsWithPrimaryKeySerializer(serializers.ModelSerializer):
 
     Currently allows updating only the order status.
     """
+
+    price = serializers.IntegerField(read_only=True)
+    features = serializers.SerializerMethodField()
+
+    def get_features(self, obj):
+        """
+        Return a list of feature names associated with the order.
+        """
+        return list(
+            obj.order_features.values_list('name', flat=True)
+        )
     class Meta:
         model = Order
         fields = [
+            'id',
+            'customer_user',
+            'business_user',
+            'title',
+            'revisions',
+            'delivery_time_in_days',
+            'price',
+            'features',
+            'offer_type',
             'status',
+            'created_at',
+            'updated_at',
         ]
